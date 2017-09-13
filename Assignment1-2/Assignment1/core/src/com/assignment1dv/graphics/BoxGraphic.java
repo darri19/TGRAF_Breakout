@@ -1,4 +1,4 @@
-  package com.assignment1dv.graphics;
+ package com.assignment1dv.graphics;
 
 import java.nio.FloatBuffer;
 

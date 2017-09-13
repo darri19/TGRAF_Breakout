@@ -14,10 +14,10 @@ public class PaddleGraphic {
 	public static void create(int vertexPointer){
 		PaddleGraphic.vertexPointer = vertexPointer;
 		//VERTEX ARRAY IS FILLED HERE
-		float[] array = {-1.5f, -0.2f,
-		-1.5f, 0.2f,
-		1.5f, 0.2f,
-		1.5f, -0.2f};
+		float[] array = {-1.0f, -1.0f,
+		-1.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, -1.0f};
 		vertexBuffer = BufferUtils.newFloatBuffer(8);
 		vertexBuffer.put(array);
 		vertexBuffer.rewind();

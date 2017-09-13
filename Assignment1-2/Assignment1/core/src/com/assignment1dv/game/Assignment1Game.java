@@ -1,8 +1,10 @@
 package com.assignment1dv.game;
 
 
+import com.assignment1dv.graphics.BallGraphic;
 import com.assignment1dv.graphics.BoxGraphic;
 import com.assignment1dv.graphics.PaddleGraphic;
+import com.assignment1dv.objects.Ball;
 import com.assignment1dv.objects.Box;
 import com.assignment1dv.objects.Paddle;
 import com.badlogic.gdx.ApplicationAdapter;
@@ -37,14 +39,17 @@ public class Assignment1Game extends ApplicationAdapter {
 	private int projectionMatrixLoc;
 
 	private int colorLoc;
-	
+
 	private Paddle p;
+	private Ball b;
 	private int rows;
 	private int cols;
 	private Box[][] boxes;
 	
 	private int height;
 	private int width;
+	
+	private boolean gameStarted = false;
 
 
 	
@@ -115,10 +120,11 @@ public class Assignment1Game extends ApplicationAdapter {
 		width = Gdx.graphics.getWidth();
 		height = Gdx.graphics.getHeight();
 		
-		PaddleGraphic.create(positionLoc);
-		p = new Paddle(new Point2D(Gdx.graphics.getWidth()/2,Gdx.graphics.getHeight()/20));
+		p = new Paddle(new Point2D(Gdx.graphics.getWidth()/2,Gdx.graphics.getHeight()/20), height/100,width/20);
+		b = new Ball(new Point2D(p.position.x, p.position.y+p.height),height/50);
 		
-		
+		BallGraphic.create(positionLoc); 
+		PaddleGraphic.create(positionLoc); 
 		BoxGraphic.create(positionLoc);
 		rows = 6;
 		cols = 8;
@@ -140,13 +146,27 @@ public class Assignment1Game extends ApplicationAdapter {
 
 
 	private void update() {
+		
+		
 		float deltaTime = Gdx.graphics.getDeltaTime();
 		if(Gdx.input.isKeyPressed(Input.Keys.LEFT) && p.position.x > 0){
 			p.moveLeft(deltaTime);
+
 		}
 		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT) && p.position.x < width){
 			p.moveRight(deltaTime);
 		}
+		if(!gameStarted){
+			b.pos.x = p.position.x;
+		}
+		else{
+			b.pos.x += b.dir.x * b.speed * deltaTime;
+			b.pos.y += b.dir.y * b.speed * deltaTime;		
+		}
+		if(Gdx.input.isKeyPressed(Input.Keys.SPACE)){
+			gameStarted = true; //bitch
+		}
+		
 	}
 
 	private void display() {
@@ -154,10 +174,14 @@ public class Assignment1Game extends ApplicationAdapter {
 		Gdx.gl.glClearColor(0f, 0f, 0f, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
+		setModelMatrixTranslation(b.pos.x,b.pos.y);
+		setModelMatrixScale(b.radius,b.radius);
+		Gdx.gl.glUniform4f(colorLoc, 1f, 1f, 1f, 1);
+		b.draw();
+		
 		setModelMatrixTranslation(p.position.x,p.position.y);
-		setModelMatrixScale(Gdx.graphics.getWidth()/20,Gdx.graphics.getHeight()/20);
+		setModelMatrixScale(p.width,p.height);
 		Gdx.gl.glUniform4f(colorLoc, 1f, 0.1f, 0.6f, 1);
-
 
 		p.draw();
 		drawBricks();
@@ -182,7 +206,8 @@ public class Assignment1Game extends ApplicationAdapter {
 			for(int j = 0; j < cols; j++){
 				setModelMatrixTranslation(startX+j*xStep,startY + i*yStep);
 				setModelMatrixScale(width/20,height/50);
-				boxes[i][j].draw();
+				if(boxes[i][j] != null)
+					boxes[i][j].draw();
 			}
 		}
 		
