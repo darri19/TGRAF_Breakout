@@ -1,19 +1,18 @@
-package com.assignment1dv.game;
+package com.assignment1dv.graphics;
 
 import java.nio.FloatBuffer;
 
+import com.assignment1dv.game.Point2D;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.utils.BufferUtils;
 
-public class Paddle {
-	public Point2D pos;
+public class PaddleGraphic {
 	private static FloatBuffer vertexBuffer;
 	private static int vertexPointer;
-	public float speed;
 	
 	public static void create(int vertexPointer){
-		Paddle.vertexPointer = vertexPointer;
+		PaddleGraphic.vertexPointer = vertexPointer;
 		//VERTEX ARRAY IS FILLED HERE
 		float[] array = {-1.5f, -0.2f,
 		-1.5f, 0.2f,

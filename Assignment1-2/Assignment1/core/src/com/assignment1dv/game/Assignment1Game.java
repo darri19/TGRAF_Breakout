@@ -1,11 +1,15 @@
 package com.assignment1dv.game;
 
 
-import com.assignment1dv.game.Box;
+import com.assignment1dv.graphics.BoxGraphic;
+import com.assignment1dv.graphics.PaddleGraphic;
+import com.assignment1dv.objects.Box;
+import com.assignment1dv.objects.Paddle;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.scenes.scene2d.ui.List;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -33,6 +37,15 @@ public class Assignment1Game extends ApplicationAdapter {
 	private int projectionMatrixLoc;
 
 	private int colorLoc;
+	
+	private Paddle p;
+	private int rows;
+	private int cols;
+	private Box[][] boxes;
+	
+	private int height;
+	private int width;
+
 
 	
 
@@ -99,10 +112,23 @@ public class Assignment1Game extends ApplicationAdapter {
 		//COLOR IS SET HERE
 		Gdx.gl.glUniform4f(colorLoc, 0.7f, 0.2f, 0, 1);
 		
-		Paddle.create(positionLoc);
-
+		width = Gdx.graphics.getWidth();
+		height = Gdx.graphics.getHeight();
+		
+		PaddleGraphic.create(positionLoc);
+		p = new Paddle(new Point2D(Gdx.graphics.getWidth()/2,Gdx.graphics.getHeight()/20));
+		
+		
+		BoxGraphic.create(positionLoc);
+		rows = 6;
+		cols = 8;
+		boxes = new Box[rows][cols];
+		for(int i = 0; i < rows;i++){
+			for(int j = 0; j < cols; j++){
+				boxes[i][j] = new Box();
+			}
+		}
 	}
-
 	@Override
 	public void render () {
 		
@@ -114,23 +140,51 @@ public class Assignment1Game extends ApplicationAdapter {
 
 
 	private void update() {
-		if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
-			
+		float deltaTime = Gdx.graphics.getDeltaTime();
+		if(Gdx.input.isKeyPressed(Input.Keys.LEFT) && p.position.x > 0){
+			p.moveLeft(deltaTime);
 		}
-		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
-			
+		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT) && p.position.x < width){
+			p.moveRight(deltaTime);
 		}
 	}
 
 	private void display() {
 
-		Gdx.gl.glClearColor(0.6f, 0.2f, 1.0f, 1.0f);
+		Gdx.gl.glClearColor(0f, 0f, 0f, 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
-		setModelMatrixTranslation(Gdx.graphics.getWidth()/2,Gdx.graphics.getHeight()/20);
+		setModelMatrixTranslation(p.position.x,p.position.y);
 		setModelMatrixScale(Gdx.graphics.getWidth()/20,Gdx.graphics.getHeight()/20);
+		Gdx.gl.glUniform4f(colorLoc, 1f, 0.1f, 0.6f, 1);
+
+
+		p.draw();
+		drawBricks();
 		
-		Paddle.draw();
+
+	}
+	
+	private void drawBricks(){
+		int startX = width/10;
+		int endX = width - startX;
+		int startY = height - (int)(height*(2/5.0f));
+		int endY = height - height/15;
+		
+		int xStep = (endX-startX)/(cols-1);
+		int yStep = (endY-startY)/(rows-1);
+		
+		Gdx.gl.glUniform4f(colorLoc, 1f, 1f, 0f, 1);
+
+		for(int i = 0; i < rows; i++){
+			Gdx.gl.glUniform4f(colorLoc, 1f, 0.8f/(i+1), 0f, 1);
+
+			for(int j = 0; j < cols; j++){
+				setModelMatrixTranslation(startX+j*xStep,startY + i*yStep);
+				setModelMatrixScale(width/20,height/50);
+				boxes[i][j].draw();
+			}
+		}
 		
 	}
 
