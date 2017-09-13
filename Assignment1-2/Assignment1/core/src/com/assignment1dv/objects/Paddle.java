@@ -6,13 +6,13 @@ import com.badlogic.gdx.Gdx;
 
 public class Paddle {
 	
-	public Point2D position;
+	public Point2D pos;
 	public float speed;
 	public float width;
 	public float height;
 	
 	public Paddle(Point2D pos, float height, float width){
-		position = pos;
+		this.pos = pos;
 		speed = 500.0f;
 		this.height = height;
 		this.width = width;
@@ -23,12 +23,12 @@ public class Paddle {
 	}
 	
 	public void moveRight(float deltaTime){
-		position.x += deltaTime * speed;
+		pos.x += deltaTime * speed;
 		
 	}
 	
 	public void moveLeft(float deltaTime){
-		position.x -= deltaTime * speed;
+		pos.x -= deltaTime * speed;
 		
 	}
 }

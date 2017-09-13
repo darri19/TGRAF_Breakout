@@ -51,11 +51,12 @@ public class Assignment1Game extends ApplicationAdapter {
 	
 	private boolean gameStarted = false;
 
-
+	float n;
 	
 
 	@Override
 	public void create () {
+		n = 0.0f;
 		String vertexShaderString;
 		String fragmentShaderString;
 
@@ -121,7 +122,7 @@ public class Assignment1Game extends ApplicationAdapter {
 		height = Gdx.graphics.getHeight();
 		
 		p = new Paddle(new Point2D(Gdx.graphics.getWidth()/2,Gdx.graphics.getHeight()/20), height/100,width/20);
-		b = new Ball(new Point2D(p.position.x, p.position.y+p.height),height/50);
+		b = new Ball(new Point2D(p.pos.x, p.pos.y+p.height),height/50);
 		
 		BallGraphic.create(positionLoc); 
 		PaddleGraphic.create(positionLoc); 
@@ -149,29 +150,55 @@ public class Assignment1Game extends ApplicationAdapter {
 		
 		
 		float deltaTime = Gdx.graphics.getDeltaTime();
-		if(Gdx.input.isKeyPressed(Input.Keys.LEFT) && p.position.x > 0){
+		checkCollisionBorders(deltaTime);
+
+		if(Gdx.input.isKeyPressed(Input.Keys.LEFT) && p.pos.x > 0){
 			p.moveLeft(deltaTime);
 
 		}
-		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT) && p.position.x < width){
+		
+		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT) && p.pos.x < width){
 			p.moveRight(deltaTime);
 		}
+		
 		if(!gameStarted){
-			b.pos.x = p.position.x;
+			b.pos.x = p.pos.x;
 		}
 		else{
 			b.pos.x += b.dir.x * b.speed * deltaTime;
 			b.pos.y += b.dir.y * b.speed * deltaTime;		
 		}
 		if(Gdx.input.isKeyPressed(Input.Keys.SPACE)){
-			gameStarted = true; //bitch
+			gameStarted = true; 
 		}
 		
+		
+		// Cheat
+		if(Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)){
+			if(Gdx.input.isKeyPressed(Input.Keys.UP) && p.pos.x > 0){
+				p.pos.y += deltaTime * p.speed;
+
+			}
+			
+			if(Gdx.input.isKeyPressed(Input.Keys.DOWN) && p.pos.x < width){
+				p.pos.y -= deltaTime * p.speed;
+			}
+		}
+		
+		if(Gdx.input.isKeyPressed(Input.Keys.W)){
+			System.out.println(n);
+			if(n < 1)
+				n+= 0.01; 
+		}
+		if(Gdx.input.isKeyPressed(Input.Keys.S)){
+			if(n >0)
+				n-= 0.01; 
+		}
 	}
 
 	private void display() {
 
-		Gdx.gl.glClearColor(0f, 0f, 0f, 1.0f);
+		Gdx.gl.glClearColor(0,0,n , 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		setModelMatrixTranslation(b.pos.x,b.pos.y);
@@ -179,7 +206,7 @@ public class Assignment1Game extends ApplicationAdapter {
 		Gdx.gl.glUniform4f(colorLoc, 1f, 1f, 1f, 1);
 		b.draw();
 		
-		setModelMatrixTranslation(p.position.x,p.position.y);
+		setModelMatrixTranslation(p.pos.x,p.pos.y);
 		setModelMatrixScale(p.width,p.height);
 		Gdx.gl.glUniform4f(colorLoc, 1f, 0.1f, 0.6f, 1);
 
@@ -201,7 +228,7 @@ public class Assignment1Game extends ApplicationAdapter {
 		Gdx.gl.glUniform4f(colorLoc, 1f, 1f, 0f, 1);
 
 		for(int i = 0; i < rows; i++){
-			Gdx.gl.glUniform4f(colorLoc, 1f, 0.8f/(i+1), 0f, 1);
+			Gdx.gl.glUniform4f(colorLoc, 1f, 0.8f/(i+0.1f), 0f, 1);
 
 			for(int j = 0; j < cols; j++){
 				setModelMatrixTranslation(startX+j*xStep,startY + i*yStep);
@@ -212,6 +239,44 @@ public class Assignment1Game extends ApplicationAdapter {
 		}
 		
 	}
+	
+	private void checkCollisionBorders(float deltaTime){
+		
+		// Borders
+		checkCollisionOnLine(new Point2D(0,0),new Point2D(0,height),deltaTime);
+		checkCollisionOnLine(new Point2D(width,0),new Point2D(width,height),deltaTime);
+		checkCollisionOnLine(new Point2D(0,height),new Point2D(width,height),deltaTime);
+		checkCollisionOnLine(new Point2D(0,0),new Point2D(width,0),deltaTime);//REMOVE DURRAY
+
+		// Paddle
+		checkCollisionOnLine(new Point2D(p.pos.x-p.width/2,p.pos.y + p.height),new Point2D(p.pos.x+p.width/2,p.pos.y + p.height),deltaTime);
+
+		// Boxes
+
+	}
+	
+	private void checkCollisionOnLine(Point2D p1, Point2D p2, float deltaTime){
+		Point2D A = b.pos;
+		Vector2D c = b.dir.multiply(b.speed);
+		Point2D B = p1;
+		
+		Vector2D v = new Vector2D(B.x - p2.x, B.y - p2.y);
+		Vector2D n = v.perp();
+		
+		Vector2D bminusa = new Vector2D(B.x-A.x,B.y-A.y);
+		
+		float tHit = n.dotProduct(bminusa)/n.dotProduct(c);
+		
+		Point2D pHit = new Point2D(A.x + tHit*c.x,A.y + tHit*c.y);
+		
+		if(tHit > 0 && tHit < deltaTime){
+			Vector2D r = c.subtract(n.multiply(2*(c.dotProduct(n)/n.dotProduct(n))));
+			b.dir = r.normalize();
+			// Check if pHit is between the two points
+		}
+
+	}
+
 
 	private void clearModelMatrix()
 	{
