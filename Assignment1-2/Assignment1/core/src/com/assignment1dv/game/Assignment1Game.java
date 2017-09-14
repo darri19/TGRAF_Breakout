@@ -11,6 +11,8 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 
 import java.nio.FloatBuffer;
@@ -21,10 +23,6 @@ import com.badlogic.gdx.utils.BufferUtils;
 
 
 public class Assignment1Game extends ApplicationAdapter {
-	
-	private final float PADDLE_POS_Y = 200;
-	
-	private FloatBuffer vertexBuffer;
 
 	private FloatBuffer modelMatrix;
 	private FloatBuffer projectionMatrix;
@@ -39,6 +37,8 @@ public class Assignment1Game extends ApplicationAdapter {
 	private int projectionMatrixLoc;
 
 	private int colorLoc;
+	
+
 
 	private Paddle p;
 	private Ball b;
@@ -51,14 +51,14 @@ public class Assignment1Game extends ApplicationAdapter {
 	
 	private boolean gameStarted = false;
 
-	float n;
+	float colorHue;
 	
 	boolean dead;
 	
 
 	@Override
 	public void create () {
-		n = 0.0f;
+		colorHue = 0.0f;
 		String vertexShaderString;
 		String fragmentShaderString;
 
@@ -125,6 +125,7 @@ public class Assignment1Game extends ApplicationAdapter {
 		
 		p = new Paddle(new Point2D(Gdx.graphics.getWidth()/2,Gdx.graphics.getHeight()/20), height/100,width/20);
 		b = new Ball(new Point2D(p.pos.x, p.pos.y+p.height),height/50);
+		System.out.println(p.pos.y+p.height);
 		
 		BallGraphic.create(positionLoc); 
 		PaddleGraphic.create(positionLoc); 
@@ -135,6 +136,8 @@ public class Assignment1Game extends ApplicationAdapter {
 	}
 	@Override
 	public void render () {
+		
+		
 		
 		update();
 		
@@ -147,14 +150,21 @@ public class Assignment1Game extends ApplicationAdapter {
 		
 		
 		float deltaTime = Gdx.graphics.getDeltaTime();
-		checkCollisions(deltaTime);
+		
+		
+		if(b.pos.y < -200){
+			gameStarted = false;
+			b.pos.y = p.pos.y+p.height+b.radius;
+		}
+		
+		checkAllCollisions(deltaTime);
 
-		if(Gdx.input.isKeyPressed(Input.Keys.LEFT) && p.pos.x > 0){
+		if(Gdx.input.isKeyPressed(Input.Keys.LEFT) && p.pos.x-p.width > 0){
 			p.moveLeft(deltaTime);
 
 		}
 		
-		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT) && p.pos.x < width){
+		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT) && p.pos.x+p.width < width){
 			p.moveRight(deltaTime);
 		}
 		
@@ -182,19 +192,26 @@ public class Assignment1Game extends ApplicationAdapter {
 			}
 		}
 		
+		
+		// Change background hue
 		if(Gdx.input.isKeyPressed(Input.Keys.W)){
-			if(n < 1)
-				n+= 0.01; 
+			if(colorHue < 1)
+				colorHue+= 0.01; 
 		}
 		if(Gdx.input.isKeyPressed(Input.Keys.S)){
-			if(n >0)
-				n-= 0.01; 
+			if(colorHue >0)
+				colorHue-= 0.01; 
 		}
 	}
 
+	private void checkAllCollisions(float deltaTime) {
+		for(Point2D point : b.getPoints()){
+			checkCollisions(point,deltaTime);
+		}
+	}
 	private void display() {
 
-		Gdx.gl.glClearColor(0,0,n , 1.0f);
+		Gdx.gl.glClearColor(0,0,colorHue , 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		setModelMatrixTranslation(b.pos.x,b.pos.y);
@@ -250,23 +267,22 @@ public class Assignment1Game extends ApplicationAdapter {
 		}
 	}
 	
-	private void checkCollisions(float deltaTime){
+	private void checkCollisions(Point2D ballPoint, float deltaTime){
 		
 		// Borders
-		checkCollisionOnLine(new Point2D(0,0),new Point2D(0,height),deltaTime);
-		checkCollisionOnLine(new Point2D(width,0),new Point2D(width,height),deltaTime);
-		checkCollisionOnLine(new Point2D(0,height),new Point2D(width,height),deltaTime);
-		checkCollisionOnLine(new Point2D(0,0),new Point2D(width,0),deltaTime);//REMOVE DURRAY
+		checkCollisionOnLine(ballPoint, new Point2D(0,0),new Point2D(0,height),deltaTime);
+		checkCollisionOnLine(ballPoint, new Point2D(width,0),new Point2D(width,height),deltaTime);
+		checkCollisionOnLine(ballPoint, new Point2D(0,height),new Point2D(width,height),deltaTime);
 
 		// Paddle
-		checkCollisionOnLine(new Point2D(p.pos.x-p.width,p.pos.y + p.height),new Point2D(p.pos.x+p.width,p.pos.y + p.height),deltaTime);
+		checkCollisionOnPaddle(ballPoint, new Point2D(p.pos.x-p.width,p.pos.y + p.height/2),new Point2D(p.pos.x+p.width,p.pos.y + p.height/2),deltaTime);
 
 		// Boxes
 		for(int i = 0; i < rows; i++){
 			for(int j = 0; j < cols; j++){
 				if(boxes[i][j] != null){
 					dead = false;
-					checkCollisionOnBox(boxes[i][j],deltaTime);
+					checkCollisionOnBox(ballPoint, boxes[i][j],deltaTime);
 					if(dead){
 						boxes[i][j] = null;
 					}
@@ -275,8 +291,39 @@ public class Assignment1Game extends ApplicationAdapter {
 		}
 	}
 	
-	private void checkCollisionOnLine(Point2D p1, Point2D p2, float deltaTime){
-		Point2D A = b.pos;
+	private void checkCollisionOnPaddle(Point2D ballPoint, Point2D p1, Point2D p2, float deltaTime) {
+		Point2D A = ballPoint;
+		Vector2D c = b.dir.multiply(b.speed);
+		Point2D B = p1;
+		
+		Vector2D v = new Vector2D(B.x - p2.x, B.y - p2.y);
+		Vector2D n = v.perp();
+		
+		Vector2D bminusa = new Vector2D(B.x-A.x,B.y-A.y);
+		
+		float tHit = n.dotProduct(bminusa)/n.dotProduct(c);
+		
+		Point2D pHit = new Point2D(A.x + tHit*c.x,A.y + tHit*c.y);
+		
+		if(pHit.isBetween(p1,p2) && tHit > 0 && tHit < deltaTime){
+			Vector2D r = c.subtract(n.multiply(2*(c.dotProduct(n)/n.dotProduct(n))));
+			
+			// Depending on where we hit the paddle, we want to rotate the reflection vector
+			float hitPos = (pHit.x - p1.x - p.width)/p.width;
+			float angle = -(45 * hitPos);
+			float theta = degToRad(angle);
+			float ct = (float)Math.cos(theta);
+			float st = (float)Math.sin(theta);
+			b.dir = new Vector2D(r.x*ct - r.y*st, r.x*st + r.y*ct).normalize();
+			dead = true;
+		}		
+	}
+	
+	public float degToRad(float angle){
+		return (float)(angle * Math.PI)/180;
+	}
+	private void checkCollisionOnLine(Point2D ballPoint, Point2D p1, Point2D p2, float deltaTime){
+		Point2D A = ballPoint;
 		Vector2D c = b.dir.multiply(b.speed);
 		Point2D B = p1;
 		
@@ -293,22 +340,20 @@ public class Assignment1Game extends ApplicationAdapter {
 			Vector2D r = c.subtract(n.multiply(2*(c.dotProduct(n)/n.dotProduct(n))));
 			b.dir = r.normalize();
 			dead = true;
-			
-			// Check if pHit is between the two points
 		}
 
 	}
 	
-	private void checkCollisionOnBox(Box box, float deltaTime){
+	private void checkCollisionOnBox(Point2D ballPoint, Box box, float deltaTime){
 		Point2D a = new Point2D(box.pos.x-box.width, box.pos.y-box.height);
 		Point2D b = new Point2D(box.pos.x-box.width, box.pos.y+box.height);
 		Point2D c = new Point2D(box.pos.x+box.width, box.pos.y+box.height);
 		Point2D d = new Point2D(box.pos.x+box.width, box.pos.y-box.height);
 		
-		checkCollisionOnLine(a,b,deltaTime);
-		checkCollisionOnLine(b,c,deltaTime);
-		checkCollisionOnLine(c,d,deltaTime);
-		checkCollisionOnLine(d,a,deltaTime);
+		checkCollisionOnLine(ballPoint, a,b,deltaTime);
+		checkCollisionOnLine(ballPoint, b,c,deltaTime);
+		checkCollisionOnLine(ballPoint, c,d,deltaTime);
+		checkCollisionOnLine(ballPoint, d,a,deltaTime);
 
 
 	}

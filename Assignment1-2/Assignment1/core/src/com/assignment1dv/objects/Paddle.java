@@ -2,7 +2,6 @@ package com.assignment1dv.objects;
 
 import com.assignment1dv.game.Point2D;
 import com.assignment1dv.graphics.PaddleGraphic;
-import com.badlogic.gdx.Gdx;
 
 public class Paddle {
 	
