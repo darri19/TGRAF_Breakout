@@ -53,6 +53,8 @@ public class Assignment1Game extends ApplicationAdapter {
 
 	float n;
 	
+	boolean dead;
+	
 
 	@Override
 	public void create () {
@@ -129,12 +131,7 @@ public class Assignment1Game extends ApplicationAdapter {
 		BoxGraphic.create(positionLoc);
 		rows = 6;
 		cols = 8;
-		boxes = new Box[rows][cols];
-		for(int i = 0; i < rows;i++){
-			for(int j = 0; j < cols; j++){
-				boxes[i][j] = new Box();
-			}
-		}
+		placeBricks();
 	}
 	@Override
 	public void render () {
@@ -150,7 +147,7 @@ public class Assignment1Game extends ApplicationAdapter {
 		
 		
 		float deltaTime = Gdx.graphics.getDeltaTime();
-		checkCollisionBorders(deltaTime);
+		checkCollisions(deltaTime);
 
 		if(Gdx.input.isKeyPressed(Input.Keys.LEFT) && p.pos.x > 0){
 			p.moveLeft(deltaTime);
@@ -186,7 +183,6 @@ public class Assignment1Game extends ApplicationAdapter {
 		}
 		
 		if(Gdx.input.isKeyPressed(Input.Keys.W)){
-			System.out.println(n);
 			if(n < 1)
 				n+= 0.01; 
 		}
@@ -203,7 +199,7 @@ public class Assignment1Game extends ApplicationAdapter {
 		
 		setModelMatrixTranslation(b.pos.x,b.pos.y);
 		setModelMatrixScale(b.radius,b.radius);
-		Gdx.gl.glUniform4f(colorLoc, 1f, 1f, 1f, 1);
+		Gdx.gl.glUniform4f(colorLoc, (b.pos.y/height), 1-(b.pos.y/height), 1f, 1);
 		b.draw();
 		
 		setModelMatrixTranslation(p.pos.x,p.pos.y);
@@ -216,7 +212,9 @@ public class Assignment1Game extends ApplicationAdapter {
 
 	}
 	
-	private void drawBricks(){
+	private void placeBricks(){
+		boxes = new Box[rows][cols];
+
 		int startX = width/10;
 		int endX = width - startX;
 		int startY = height - (int)(height*(2/5.0f));
@@ -225,22 +223,34 @@ public class Assignment1Game extends ApplicationAdapter {
 		int xStep = (endX-startX)/(cols-1);
 		int yStep = (endY-startY)/(rows-1);
 		
+
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				boxes[i][j] = new Box(new Point2D(startX+j*xStep,startY + i*yStep),width/20,height/50);
+			}
+		}
+		
+	}
+	
+	private void drawBricks(){
+		
 		Gdx.gl.glUniform4f(colorLoc, 1f, 1f, 0f, 1);
 
 		for(int i = 0; i < rows; i++){
 			Gdx.gl.glUniform4f(colorLoc, 1f, 0.8f/(i+0.1f), 0f, 1);
 
 			for(int j = 0; j < cols; j++){
-				setModelMatrixTranslation(startX+j*xStep,startY + i*yStep);
-				setModelMatrixScale(width/20,height/50);
-				if(boxes[i][j] != null)
-					boxes[i][j].draw();
+				if(boxes[i][j] != null){
+					Box box = boxes[i][j];
+					setModelMatrixTranslation(box.pos.x,box.pos.y);
+					setModelMatrixScale(box.width,box.height);
+					box.draw();
+				}
 			}
 		}
-		
 	}
 	
-	private void checkCollisionBorders(float deltaTime){
+	private void checkCollisions(float deltaTime){
 		
 		// Borders
 		checkCollisionOnLine(new Point2D(0,0),new Point2D(0,height),deltaTime);
@@ -252,7 +262,17 @@ public class Assignment1Game extends ApplicationAdapter {
 		checkCollisionOnLine(new Point2D(p.pos.x-p.width,p.pos.y + p.height),new Point2D(p.pos.x+p.width,p.pos.y + p.height),deltaTime);
 
 		// Boxes
-
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				if(boxes[i][j] != null){
+					dead = false;
+					checkCollisionOnBox(boxes[i][j],deltaTime);
+					if(dead){
+						boxes[i][j] = null;
+					}
+				}
+			}
+		}
 	}
 	
 	private void checkCollisionOnLine(Point2D p1, Point2D p2, float deltaTime){
@@ -272,8 +292,24 @@ public class Assignment1Game extends ApplicationAdapter {
 		if(pHit.isBetween(p1,p2) && tHit > 0 && tHit < deltaTime){
 			Vector2D r = c.subtract(n.multiply(2*(c.dotProduct(n)/n.dotProduct(n))));
 			b.dir = r.normalize();
+			dead = true;
+			
 			// Check if pHit is between the two points
 		}
+
+	}
+	
+	private void checkCollisionOnBox(Box box, float deltaTime){
+		Point2D a = new Point2D(box.pos.x-box.width, box.pos.y-box.height);
+		Point2D b = new Point2D(box.pos.x-box.width, box.pos.y+box.height);
+		Point2D c = new Point2D(box.pos.x+box.width, box.pos.y+box.height);
+		Point2D d = new Point2D(box.pos.x+box.width, box.pos.y-box.height);
+		
+		checkCollisionOnLine(a,b,deltaTime);
+		checkCollisionOnLine(b,c,deltaTime);
+		checkCollisionOnLine(c,d,deltaTime);
+		checkCollisionOnLine(d,a,deltaTime);
+
 
 	}
 
