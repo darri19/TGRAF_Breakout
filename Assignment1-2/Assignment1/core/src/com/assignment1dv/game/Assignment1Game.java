@@ -249,7 +249,7 @@ public class Assignment1Game extends ApplicationAdapter {
 		checkCollisionOnLine(new Point2D(0,0),new Point2D(width,0),deltaTime);//REMOVE DURRAY
 
 		// Paddle
-		checkCollisionOnLine(new Point2D(p.pos.x-p.width/2,p.pos.y + p.height),new Point2D(p.pos.x+p.width/2,p.pos.y + p.height),deltaTime);
+		checkCollisionOnLine(new Point2D(p.pos.x-p.width,p.pos.y + p.height),new Point2D(p.pos.x+p.width,p.pos.y + p.height),deltaTime);
 
 		// Boxes
 
@@ -269,7 +269,7 @@ public class Assignment1Game extends ApplicationAdapter {
 		
 		Point2D pHit = new Point2D(A.x + tHit*c.x,A.y + tHit*c.y);
 		
-		if(tHit > 0 && tHit < deltaTime){
+		if(pHit.isBetween(p1,p2) && tHit > 0 && tHit < deltaTime){
 			Vector2D r = c.subtract(n.multiply(2*(c.dotProduct(n)/n.dotProduct(n))));
 			b.dir = r.normalize();
 			// Check if pHit is between the two points
