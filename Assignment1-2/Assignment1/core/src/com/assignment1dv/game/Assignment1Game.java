@@ -13,12 +13,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.scenes.scene2d.ui.List;
-
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
 
 import com.badlogic.gdx.utils.BufferUtils;
 
@@ -52,6 +47,8 @@ public class Assignment1Game extends ApplicationAdapter {
 	private int width;
 	
 	private boolean gameStarted = false;
+	private boolean victory = false;
+	private boolean gameOver = false;
 
 	float colorHue;
 	int lives = 3;
@@ -152,59 +149,80 @@ public class Assignment1Game extends ApplicationAdapter {
 		
 		float deltaTime = Gdx.graphics.getDeltaTime();
 		
-		
-		if(b.pos.y < -200){
-			lives--;
-			gameStarted = false;
-			if(lives > 0){
-				b.pos.y = p.pos.y+p.height+b.radius;
+		boolean broken = false;
+		for(int i = 0; i < rows; i++){
+			broken = false;
+			for(int j = 0; j < cols; j++){
+				if(boxes[i][j] != null){
+					broken = true;
+					break;
+				}
+				
 			}
+			if(broken)
+				break;
 		}
-		
-		checkAllCollisions(deltaTime);
-
-		if(Gdx.input.isKeyPressed(Input.Keys.LEFT) && p.pos.x-p.width > 0){
-			p.moveLeft(deltaTime);
-
+		if(!broken){
+			victory = true;
+			//b = null;
+			//p = null;
 		}
-		
-		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT) && p.pos.x+p.width < width){
-			p.moveRight(deltaTime);
-		}
-		
-		if(!gameStarted){
-			b.pos.x = p.pos.x;
-		}
-		else{
-			b.pos.x += b.dir.x * b.speed * deltaTime;
-			b.pos.y += b.dir.y * b.speed * deltaTime;		
-		}
-		if(Gdx.input.isKeyPressed(Input.Keys.SPACE)){
-			gameStarted = true; 
-		}
-		
-		
-		// Cheat
-		if(Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)){
-			if(Gdx.input.isKeyPressed(Input.Keys.UP) && p.pos.x > 0){
-				p.pos.y += deltaTime * p.speed;
-
+		if(!victory && !gameOver){
+			if(b.pos.y < -200){
+				lives--;
+				gameStarted = false;
+				if(lives > 0){
+					b.pos.y = p.pos.y+p.height+b.radius;
+				}else{
+					gameOver = true;
+				}
 			}
 			
-			if(Gdx.input.isKeyPressed(Input.Keys.DOWN) && p.pos.x < width){
-				p.pos.y -= deltaTime * p.speed;
+			checkAllCollisions(deltaTime);
+	
+			if(Gdx.input.isKeyPressed(Input.Keys.LEFT) && p.pos.x-p.width > 0){
+				p.moveLeft(deltaTime);
+	
 			}
-		}
-		
-		
-		// Change background hue
-		if(Gdx.input.isKeyPressed(Input.Keys.W)){
-			if(colorHue < 1)
-				colorHue+= 0.01; 
-		}
-		if(Gdx.input.isKeyPressed(Input.Keys.S)){
-			if(colorHue >0)
-				colorHue-= 0.01; 
+			
+			if(Gdx.input.isKeyPressed(Input.Keys.RIGHT) && p.pos.x+p.width < width){
+				p.moveRight(deltaTime);
+			}
+			
+			if(!gameStarted){
+				b.pos.x = p.pos.x;
+			}
+			else{
+				b.pos.x += b.dir.x * b.speed * deltaTime;
+				b.pos.y += b.dir.y * b.speed * deltaTime;		
+			}
+			if(Gdx.input.isKeyPressed(Input.Keys.SPACE)){
+				gameStarted = true; 
+			}
+			
+			
+			// Cheat
+			if(Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)){
+				if(Gdx.input.isKeyPressed(Input.Keys.UP) && p.pos.x > 0){
+					p.pos.y += deltaTime * p.speed;
+	
+				}
+				
+				if(Gdx.input.isKeyPressed(Input.Keys.DOWN) && p.pos.x < width){
+					p.pos.y -= deltaTime * p.speed;
+				}
+			}
+			
+			
+			// Change background hue
+			if(Gdx.input.isKeyPressed(Input.Keys.W)){
+				if(colorHue < 1)
+					colorHue+= 0.01; 
+			}
+			if(Gdx.input.isKeyPressed(Input.Keys.S)){
+				if(colorHue >0)
+					colorHue-= 0.01; 
+			}
 		}
 	}
 
@@ -218,29 +236,35 @@ public class Assignment1Game extends ApplicationAdapter {
 		Gdx.gl.glClearColor(0,0,colorHue , 1.0f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
-		setModelMatrixTranslation(b.pos.x,b.pos.y);
-		setModelMatrixScale(b.radius,b.radius);
-		Gdx.gl.glUniform4f(colorLoc, (b.pos.y/height), 1-(b.pos.y/height), 1f, 1);
-		b.draw();
-		
-		setModelMatrixTranslation(p.pos.x,p.pos.y);
-		setModelMatrixScale(p.width,p.height);
-		Gdx.gl.glUniform4f(colorLoc, 1f, 0.1f, 0.6f, 1);
-
-		p.draw();
-		drawBricks();
-		
-		if(!gameStarted){
-			if(lives > 0){
+		if(!victory && !gameOver){
+			
+			setModelMatrixTranslation(b.pos.x,b.pos.y);
+			setModelMatrixScale(b.radius,b.radius);
+			Gdx.gl.glUniform4f(colorLoc, (b.pos.y/height), 1-(b.pos.y/height), 1f, 1);
+			b.draw();
+			
+			setModelMatrixTranslation(p.pos.x,p.pos.y);
+			setModelMatrixScale(p.width,p.height);
+			Gdx.gl.glUniform4f(colorLoc, 0.6f, 0.5f, 0.6f, 1f);
+	
+			p.draw();
+			drawBricks();
+			
+			if(!gameStarted){
 				Text text = new Text("Press space to play\nRemaining lives: " + lives,new Point2D(width/20,height-(height*(3/5.0f))), Color.WHITE,40 );
 				text.draw(positionLoc,renderingProgramID);
+			}
+		
+		}else{
+			if(victory){
+				Text text = new Text("VICTORY",new Point2D(width/20,height-(height*(3/5.0f))), Color.WHITE,70 );
+				text.draw(positionLoc,renderingProgramID);
 			}else{
-				Text text = new Text("Game over",new Point2D(width/20,height-(height*(3/5.0f))), Color.WHITE,40 );
+				Text text = new Text("GAME OVER",new Point2D(width/20,height-(height*(3/5.0f))), Color.WHITE,70 );
 				text.draw(positionLoc,renderingProgramID);
 			}
-		}
-		
 
+		}
 	}
 	
 	private void placeBricks(){
