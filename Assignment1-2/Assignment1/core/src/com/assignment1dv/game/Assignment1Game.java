@@ -4,12 +4,14 @@ package com.assignment1dv.game;
 import com.assignment1dv.graphics.BallGraphic;
 import com.assignment1dv.graphics.BoxGraphic;
 import com.assignment1dv.graphics.PaddleGraphic;
+import com.assignment1dv.graphics.Text;
 import com.assignment1dv.objects.Ball;
 import com.assignment1dv.objects.Box;
 import com.assignment1dv.objects.Paddle;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -52,7 +54,7 @@ public class Assignment1Game extends ApplicationAdapter {
 	private boolean gameStarted = false;
 
 	float colorHue;
-	
+	int lives = 3;
 	boolean dead;
 	
 
@@ -136,11 +138,10 @@ public class Assignment1Game extends ApplicationAdapter {
 	}
 	@Override
 	public void render () {
-		
-		
+
 		
 		update();
-		
+
 		display();
 		
 	}
@@ -153,8 +154,11 @@ public class Assignment1Game extends ApplicationAdapter {
 		
 		
 		if(b.pos.y < -200){
+			lives--;
 			gameStarted = false;
-			b.pos.y = p.pos.y+p.height+b.radius;
+			if(lives > 0){
+				b.pos.y = p.pos.y+p.height+b.radius;
+			}
 		}
 		
 		checkAllCollisions(deltaTime);
@@ -225,6 +229,16 @@ public class Assignment1Game extends ApplicationAdapter {
 
 		p.draw();
 		drawBricks();
+		
+		if(!gameStarted){
+			if(lives > 0){
+				Text text = new Text("Press space to play\nRemaining lives: " + lives,new Point2D(width/20,height-(height*(3/5.0f))), Color.WHITE,40 );
+				text.draw(positionLoc,renderingProgramID);
+			}else{
+				Text text = new Text("Game over",new Point2D(width/20,height-(height*(3/5.0f))), Color.WHITE,40 );
+				text.draw(positionLoc,renderingProgramID);
+			}
+		}
 		
 
 	}
